@@ -87,7 +87,14 @@ $error->error->providerMessage;
 $error->error->code;
 $error->error->httpCode;
 $error->error->category;
+$error->error->path;
+$error->error->logId;
 ```
+
+Para errores de validación HTTP `400` y `422`, `message` conserva el detalle
+específico informado por Facturapi. Los errores de conexión, autenticación y del
+servidor utilizan mensajes públicos seguros; el detalle técnico permanece en
+`providerMessage` para diagnóstico y no debe enviarse directamente al frontend.
 
 ---
 

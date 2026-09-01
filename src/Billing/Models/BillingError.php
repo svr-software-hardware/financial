@@ -14,6 +14,8 @@ final readonly class BillingError
         public ?string $code = null,
         public ?int $httpCode = null,
         public BillingErrorCategory $category = BillingErrorCategory::Unknown,
+        public ?string $path = null,
+        public ?string $logId = null,
     ) {
     }
 }

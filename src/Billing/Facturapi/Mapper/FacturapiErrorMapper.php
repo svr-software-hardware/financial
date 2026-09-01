@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SVR\Financial\Billing\Facturapi\Mapper;
 
+use Facturapi\Exceptions\FacturapiException;
 use SVR\Financial\Billing\Enums\BillingErrorCategory;
 use SVR\Financial\Billing\Models\BillingError;
 use Throwable;
@@ -12,9 +13,7 @@ final class FacturapiErrorMapper
 {
     public function map(Throwable $error): BillingError
     {
-        $providerMessage = trim(
-            $error->getMessage()
-        );
+        $providerMessage = $this->extractProviderMessage($error);
 
         $httpCode = $this->extractHttpCode(
             $error
@@ -34,6 +33,8 @@ final class FacturapiErrorMapper
             code: $this->extractCode($error),
             httpCode: $httpCode,
             category: $category,
+            path: $this->extractString($error, 'getErrorPath'),
+            logId: $this->extractString($error, 'getLogId'),
         );
     }
 
@@ -123,9 +124,9 @@ final class FacturapiErrorMapper
                 'Facturapi rechazó las credenciales proporcionadas.',
 
             BillingErrorCategory::Validation =>
-                $this->validationMessage(
-                    $providerMessage
-                ),
+                $providerMessage !== ''
+                    ? $providerMessage
+                    : 'La información proporcionada no pudo ser validada.',
 
             BillingErrorCategory::Provider =>
                 'Facturapi no pudo procesar la operación.',
@@ -135,54 +136,18 @@ final class FacturapiErrorMapper
         };
     }
 
-    private function validationMessage(
-        string $providerMessage,
-    ): string {
-        $message = mb_strtolower(
-            $providerMessage
-        );
-
-        if (
-            str_contains($message, 'rfc')
-            || str_contains($message, 'tax_id')
-            || str_contains($message, 'tax id')
-        ) {
-            return 'El RFC no pudo ser validado.';
-        }
-
-        if (
-            str_contains($message, 'tax_system')
-            || str_contains($message, 'tax system')
-            || str_contains($message, 'régimen')
-            || str_contains($message, 'regimen')
-        ) {
-            return 'El régimen fiscal no es válido para este contribuyente.';
-        }
-
-        if (
-            str_contains($message, 'legal_name')
-            || str_contains($message, 'legal name')
-            || str_contains($message, 'razón social')
-            || str_contains($message, 'razon social')
-            || str_contains($message, 'nombre')
-        ) {
-            return 'El nombre o razón social no coincide con los registros fiscales.';
-        }
-
-        if (
-            str_contains($message, 'zip')
-            || str_contains($message, 'código postal')
-            || str_contains($message, 'codigo postal')
-        ) {
-            return 'El código postal fiscal no coincide con los registros fiscales.';
-        }
-
-        return 'La información proporcionada no pudo ser validada.';
-    }
-
     private function extractCode(
         Throwable $error,
     ): ?string {
+        $providerCode = $this->extractString(
+            $error,
+            'getErrorCode',
+        );
+
+        if ($providerCode !== null) {
+            return $providerCode;
+        }
+
         $code = $error->getCode();
 
         return $code !== 0
@@ -193,6 +158,18 @@ final class FacturapiErrorMapper
     private function extractHttpCode(
         Throwable $error,
     ): ?int {
+        if ($error instanceof FacturapiException) {
+            return $error->getStatusCode();
+        }
+
+        if (method_exists($error, 'getStatusCode')) {
+            $statusCode = $error->getStatusCode();
+
+            if (is_int($statusCode)) {
+                return $statusCode;
+            }
+        }
+
         if (!method_exists($error, 'getResponse')) {
             return null;
         }
@@ -208,5 +185,83 @@ final class FacturapiErrorMapper
         }
 
         return (int) $response->getStatusCode();
+    }
+
+    private function extractProviderMessage(
+        Throwable $error,
+    ): string {
+        if ($error instanceof FacturapiException) {
+            $message = $this->firstMessage(
+                $error->getErrors()
+            );
+
+            if ($message !== null) {
+                return $message;
+            }
+
+            $message = $this->firstMessage(
+                $error->getErrorData()
+            );
+
+            if ($message !== null) {
+                return $message;
+            }
+        }
+
+        return trim($error->getMessage());
+    }
+
+    private function firstMessage(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            $value = trim($value);
+
+            return $value !== '' ? $value : null;
+        }
+
+        if (!is_array($value)) {
+            return null;
+        }
+
+        foreach (['message', 'details', 'errors'] as $key) {
+            if (!array_key_exists($key, $value)) {
+                continue;
+            }
+
+            $message = $this->firstMessage($value[$key]);
+
+            if ($message !== null) {
+                return $message;
+            }
+        }
+
+        foreach ($value as $item) {
+            $message = $this->firstMessage($item);
+
+            if ($message !== null) {
+                return $message;
+            }
+        }
+
+        return null;
+    }
+
+    private function extractString(
+        Throwable $error,
+        string $method,
+    ): ?string {
+        if (!method_exists($error, $method)) {
+            return null;
+        }
+
+        $value = $error->{$method}();
+
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        return $value !== '' ? $value : null;
     }
 }

@@ -153,8 +153,8 @@ normalizados como resultado.
 
 ## Versión
 
-Versión inicial:
+Versión actual:
 
 ```text
-v1.0.0
+v1.0.1
 ```
