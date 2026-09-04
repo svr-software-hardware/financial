@@ -6,6 +6,7 @@ namespace SVR\Financial\Billing\Facturapi\Mapper;
 
 use Facturapi\Exceptions\FacturapiException;
 use SVR\Financial\Billing\Enums\BillingErrorCategory;
+use SVR\Financial\Billing\Facturapi\Exceptions\FacturapiConfigurationException;
 use SVR\Financial\Billing\Models\BillingError;
 use Throwable;
 
@@ -20,6 +21,7 @@ final class FacturapiErrorMapper
         );
 
         $category = $this->category(
+            $error,
             $providerMessage,
             $httpCode,
         );
@@ -39,9 +41,14 @@ final class FacturapiErrorMapper
     }
 
     private function category(
+        Throwable $error,
         string $providerMessage,
         ?int $httpCode,
     ): BillingErrorCategory {
+        if ($error instanceof FacturapiConfigurationException) {
+            return BillingErrorCategory::Configuration;
+        }
+
         $message = mb_strtolower(
             $providerMessage
         );

@@ -156,5 +156,5 @@ normalizados como resultado.
 Versión actual:
 
 ```text
-v1.0.1
+v1.0.2
 ```

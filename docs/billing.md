@@ -71,7 +71,11 @@ Resultado:
 $validation->valid;
 $validation->message;
 $validation->providerCustomerId;
+$validation->error;
 ```
+
+Cuando la validación falla, `error` conserva el `BillingError` completo con la
+categoría, código, estado HTTP, path, log ID y mensaje original del proveedor.
 
 Ejemplo:
 

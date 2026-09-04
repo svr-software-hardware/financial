@@ -86,6 +86,7 @@ final readonly class FacturapiFiscalCustomerGateway implements FiscalCustomerGat
             return new FiscalValidation(
                 valid: false,
                 message: $error->error->message,
+                error: $error->error,
             );
         }
     }

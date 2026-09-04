@@ -8,6 +8,7 @@ use Facturapi\Exceptions\FacturapiException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use SVR\Financial\Billing\Enums\BillingErrorCategory;
+use SVR\Financial\Billing\Facturapi\Exceptions\FacturapiConfigurationException;
 use SVR\Financial\Billing\Facturapi\Mapper\FacturapiErrorMapper;
 
 final class FacturapiErrorMapperTest extends TestCase
@@ -121,5 +122,38 @@ final class FacturapiErrorMapperTest extends TestCase
         );
         self::assertSame(BillingErrorCategory::Provider, $mapped->category);
         self::assertStringNotContainsString('host:5432', $mapped->message);
+    }
+
+    public function test_it_classifies_a_missing_api_key_as_configuration(): void
+    {
+        $mapped = (new FacturapiErrorMapper())->map(
+            new FacturapiConfigurationException(
+                'La API Key principal de Facturapi no está configurada.'
+            )
+        );
+
+        self::assertSame(
+            'La configuración del proveedor de facturación no es válida.',
+            $mapped->message,
+        );
+        self::assertSame(
+            'La API Key principal de Facturapi no está configurada.',
+            $mapped->providerMessage,
+        );
+        self::assertSame(BillingErrorCategory::Configuration, $mapped->category);
+    }
+
+    public function test_it_preserves_the_message_from_an_unknown_exception(): void
+    {
+        $mapped = (new FacturapiErrorMapper())->map(
+            new \RuntimeException('Unexpected provider response')
+        );
+
+        self::assertSame(
+            'Ocurrió un error al procesar la operación de facturación.',
+            $mapped->message,
+        );
+        self::assertSame('Unexpected provider response', $mapped->providerMessage);
+        self::assertSame(BillingErrorCategory::Unknown, $mapped->category);
     }
 }

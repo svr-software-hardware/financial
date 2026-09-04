@@ -10,6 +10,7 @@ final readonly class FiscalValidation
         public bool $valid,
         public ?string $message = null,
         public ?string $providerCustomerId = null,
+        public ?BillingError $error = null,
     ) {
     }
 }
