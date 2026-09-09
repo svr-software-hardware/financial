@@ -10,7 +10,7 @@ final readonly class CustomerData
         public string $name,
         public string $lastName,
         public string $email,
-        public string $phone,
+        public ?string $phone = null,
     ) {
     }
 }

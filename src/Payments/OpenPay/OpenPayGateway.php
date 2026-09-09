@@ -183,9 +183,12 @@ final readonly class OpenPayGateway implements PaymentGateway
                 'name' => $data->customer->name,
                 'last_name' => $data->customer->lastName,
                 'email' => $data->customer->email,
-                'phone_number' => $data->customer->phone,
             ],
         ];
+
+        if ($data->customer->phone !== null && $data->customer->phone !== '') {
+            $payload['customer']['phone_number'] = $data->customer->phone;
+        }
 
         if ($data->use3DSecure) {
             $payload['redirect_url'] = $data->redirectUrl;
