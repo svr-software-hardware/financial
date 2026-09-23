@@ -17,6 +17,8 @@ use SVR\Financial\Billing\Contracts\FiscalCustomerGateway;
 use SVR\Financial\Billing\Contracts\InvoiceGateway;
 use SVR\Financial\Billing\Facturapi\FacturapiFiscalCustomerGateway;
 use SVR\Financial\Billing\Facturapi\FacturapiGateway;
+use SVR\Financial\Billing\Contracts\OrganizationGateway;
+use SVR\Financial\Billing\Facturapi\FacturapiOrganizationGateway;
 
 final class FinancialServiceProvider extends ServiceProvider {
   public function register(): void {
@@ -103,6 +105,11 @@ final class FinancialServiceProvider extends ServiceProvider {
 
     $this->app->singleton(
       BillingManager::class,
+    );
+
+    $this->app->bind(
+      OrganizationGateway::class,
+      FacturapiOrganizationGateway::class,
     );
   }
 

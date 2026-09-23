@@ -6,10 +6,15 @@ namespace SVR\Financial\Billing;
 
 use SVR\Financial\Billing\Contracts\FiscalCustomerGateway;
 use SVR\Financial\Billing\Contracts\InvoiceGateway;
+use SVR\Financial\Billing\Contracts\OrganizationGateway;
 use SVR\Financial\Billing\DTO\BillingContext;
 use SVR\Financial\Billing\DTO\FiscalCustomerData;
 use SVR\Financial\Billing\DTO\InvoiceData;
+use SVR\Financial\Billing\DTO\OrganizationCertificateData;
+use SVR\Financial\Billing\DTO\OrganizationData;
+use SVR\Financial\Billing\DTO\OrganizationLegalData;
 use SVR\Financial\Billing\Enums\BillingProvider;
+use SVR\Financial\Billing\Models\BillingOrganization;
 use SVR\Financial\Billing\Models\FiscalCustomer;
 use SVR\Financial\Billing\Models\FiscalValidation;
 use SVR\Financial\Billing\Models\Invoice;
@@ -19,6 +24,7 @@ final readonly class BillingManager
     public function __construct(
         private InvoiceGateway $invoiceGateway,
         private FiscalCustomerGateway $customerGateway,
+        private OrganizationGateway $organizationGateway,
     ) {
     }
 
@@ -91,6 +97,35 @@ final readonly class BillingManager
             ->deleteCustomer(
                 $providerCustomerId,
                 $context ?? BillingContext::default(),
+            );
+    }
+
+    public function createOrganization(
+        OrganizationData $data,
+    ): BillingOrganization {
+        return $this->organizationGateway
+            ->create($data);
+    }
+
+    public function updateOrganizationLegalData(
+        string $organizationId,
+        OrganizationLegalData $data,
+    ): BillingOrganization {
+        return $this->organizationGateway
+            ->updateLegalData(
+                $organizationId,
+                $data,
+            );
+    }
+
+    public function uploadOrganizationCertificate(
+        string $organizationId,
+        OrganizationCertificateData $data,
+    ): BillingOrganization {
+        return $this->organizationGateway
+            ->uploadCertificate(
+                $organizationId,
+                $data,
             );
     }
 }
