@@ -7,6 +7,7 @@ namespace SVR\Financial\Billing\Facturapi;
 use SVR\Financial\Billing\Contracts\InvoiceGateway;
 use SVR\Financial\Billing\DTO\BillingContext;
 use SVR\Financial\Billing\DTO\InvoiceData;
+use SVR\Financial\Billing\DTO\PublicGeneralInvoiceData;
 use SVR\Financial\Billing\Enums\BillingProvider;
 use SVR\Financial\Billing\Exceptions\BillingProviderException;
 use SVR\Financial\Billing\Facturapi\Mapper\FacturapiErrorMapper;
@@ -56,15 +57,41 @@ final readonly class FacturapiGateway implements InvoiceGateway
 
             return $this->invoiceMapper
                 ->fromResponse($invoice);
+
         } catch (BillingProviderException $error) {
             throw $error;
+
         } catch (Throwable $error) {
-            throw new BillingProviderException(
-                provider: BillingProvider::Facturapi,
-                error: $this->errorMapper->map(
-                    $error
-                ),
-                previous: $error,
+            throw $this->providerException(
+                $error
+            );
+        }
+    }
+
+    public function stampPublicGeneral(
+        PublicGeneralInvoiceData $data,
+        BillingContext $context,
+    ): Invoice {
+        try {
+            $facturapi = $this->clientFactory
+                ->create($context);
+
+            $invoice = $facturapi
+                ->Invoices
+                ->create(
+                    $this->payloadMapper
+                        ->mapPublicGeneral($data)
+                );
+
+            return $this->invoiceMapper
+                ->fromResponse($invoice);
+
+        } catch (BillingProviderException $error) {
+            throw $error;
+
+        } catch (Throwable $error) {
+            throw $this->providerException(
+                $error
             );
         }
     }
@@ -103,11 +130,15 @@ final readonly class FacturapiGateway implements InvoiceGateway
             $content = match ($format) {
                 'pdf' => $facturapi
                     ->Invoices
-                    ->downloadPdf($providerId),
+                    ->downloadPdf(
+                        $providerId
+                    ),
 
                 'xml' => $facturapi
                     ->Invoices
-                    ->downloadXml($providerId),
+                    ->downloadXml(
+                        $providerId
+                    ),
             };
 
             if (is_resource($content)) {
@@ -123,14 +154,23 @@ final readonly class FacturapiGateway implements InvoiceGateway
             }
 
             return $content;
+
         } catch (Throwable $error) {
-            throw new BillingProviderException(
-                provider: BillingProvider::Facturapi,
-                error: $this->errorMapper->map(
-                    $error
-                ),
-                previous: $error,
+            throw $this->providerException(
+                $error
             );
         }
+    }
+
+    private function providerException(
+        Throwable $error,
+    ): BillingProviderException {
+        return new BillingProviderException(
+            provider: BillingProvider::Facturapi,
+            error: $this->errorMapper->map(
+                $error
+            ),
+            previous: $error,
+        );
     }
 }

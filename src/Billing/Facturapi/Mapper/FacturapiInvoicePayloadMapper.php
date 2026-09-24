@@ -6,6 +6,7 @@ namespace SVR\Financial\Billing\Facturapi\Mapper;
 
 use SVR\Financial\Billing\DTO\InvoiceData;
 use SVR\Financial\Billing\DTO\InvoiceItemData;
+use SVR\Financial\Billing\DTO\PublicGeneralInvoiceData;
 use SVR\Financial\Billing\DTO\TaxData;
 
 final class FacturapiInvoicePayloadMapper
@@ -19,16 +20,63 @@ final class FacturapiInvoicePayloadMapper
     ): array {
         return [
             'customer' => $customerId,
-            'items' => array_map(
-                fn (
-                    InvoiceItemData $item
-                ): array => $this->mapItem($item),
-                $data->items,
+            'items' => $this->mapItems(
+                $data->items
             ),
             'use' => $data->cfdiUsage,
             'payment_form' => $data->paymentForm,
             'payment_method' => $data->paymentMethod,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function mapPublicGeneral(
+        PublicGeneralInvoiceData $data,
+    ): array {
+        return [
+            'customer' => [
+                'legal_name' => 'PUBLICO EN GENERAL',
+                'tax_id' => 'XAXX010101000',
+                'tax_system' => '616',
+                'address' => [
+                    'zip' => trim(
+                        $data->issuerZipCode
+                    ),
+                    'country' => 'MEX',
+                ],
+            ],
+            'items' => $this->mapItems(
+                $data->items
+            ),
+            'use' => 'S01',
+            'payment_form' => $data->paymentForm,
+            'payment_method' => $data->paymentMethod,
+            'global' => [
+                'periodicity' => $data
+                    ->periodicity
+                    ->value,
+                'months' => $data->months,
+                'year' => $data->year,
+            ],
+        ];
+    }
+
+    /**
+     * @param array<int, InvoiceItemData> $items
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function mapItems(
+        array $items,
+    ): array {
+        return array_map(
+            fn (
+                InvoiceItemData $item
+            ): array => $this->mapItem($item),
+            $items,
+        );
     }
 
     /**

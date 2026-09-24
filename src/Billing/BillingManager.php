@@ -13,6 +13,7 @@ use SVR\Financial\Billing\DTO\InvoiceData;
 use SVR\Financial\Billing\DTO\OrganizationCertificateData;
 use SVR\Financial\Billing\DTO\OrganizationData;
 use SVR\Financial\Billing\DTO\OrganizationLegalData;
+use SVR\Financial\Billing\DTO\PublicGeneralInvoiceData;
 use SVR\Financial\Billing\Enums\BillingProvider;
 use SVR\Financial\Billing\Models\BillingOrganization;
 use SVR\Financial\Billing\Models\FiscalCustomer;
@@ -40,6 +41,17 @@ final readonly class BillingManager
     ): Invoice {
         return $this->invoiceGateway
             ->stamp(
+                $data,
+                $context ?? BillingContext::default(),
+            );
+    }
+
+    public function stampPublicGeneral(
+        PublicGeneralInvoiceData $data,
+        ?BillingContext $context = null,
+    ): Invoice {
+        return $this->invoiceGateway
+            ->stampPublicGeneral(
                 $data,
                 $context ?? BillingContext::default(),
             );
