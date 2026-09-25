@@ -18,6 +18,7 @@ final readonly class InvoiceItemData
         public float $discount = 0,
         public bool $taxIncluded = true,
         public array $taxes = [],
+        public ?string $sku = null,
     ) {
     }
 }

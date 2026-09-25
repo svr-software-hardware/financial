@@ -35,15 +35,15 @@ final readonly class PublicGeneralInvoiceData
             }
         }
 
-        if (strlen(trim($this->paymentForm)) !== 2) {
+        if (!preg_match('/^\d{2}$/', trim($this->paymentForm))) {
             throw new InvalidArgumentException(
-                'La forma de pago debe ser un código SAT de 2 caracteres.'
+                'La forma de pago debe ser un código SAT de 2 dígitos.'
             );
         }
 
-        if (strlen(trim($this->issuerZipCode)) !== 5) {
+        if (!preg_match('/^\d{5}$/', trim($this->issuerZipCode))) {
             throw new InvalidArgumentException(
-                'El código postal fiscal del emisor debe contener 5 caracteres.'
+                'El código postal fiscal del emisor debe contener 5 dígitos.'
             );
         }
 
@@ -55,9 +55,21 @@ final readonly class PublicGeneralInvoiceData
 
         $monthCode = (int) $this->months;
 
-        if ($monthCode < 1 || $monthCode > 18) {
+        if (
+            $this->periodicity === GlobalPeriodicity::TwoMonths
+            && ($monthCode < 13 || $monthCode > 18)
+        ) {
             throw new InvalidArgumentException(
-                'La clave de mes o bimestre debe estar entre 01 y 18.'
+                'La periodicidad bimestral debe utilizar una clave entre 13 y 18.'
+            );
+        }
+
+        if (
+            $this->periodicity !== GlobalPeriodicity::TwoMonths
+            && ($monthCode < 1 || $monthCode > 12)
+        ) {
+            throw new InvalidArgumentException(
+                'La periodicidad seleccionada debe utilizar una clave de mes entre 01 y 12.'
             );
         }
 

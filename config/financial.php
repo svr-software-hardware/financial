@@ -42,6 +42,7 @@ return [
         'facturapi' => [
             'api_key' => env('FACTURAPI_KEY'),
             'user_key' => env('FACTURAPI_USER_KEY'),
+            'production' => env('FACTURAPI_PRODUCTION', false),
         ],
 
     ],

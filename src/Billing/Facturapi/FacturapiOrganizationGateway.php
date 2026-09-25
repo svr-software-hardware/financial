@@ -107,6 +107,39 @@ final readonly class FacturapiOrganizationGateway implements OrganizationGateway
         }
     }
 
+    public function createLiveApiKey(
+        string $organizationId,
+    ): string {
+        $organizationId = $this->requireOrganizationId(
+            $organizationId
+        );
+
+        try {
+            $facturapi = $this->clientFactory
+                ->createUserClient();
+
+            $apiKey = $facturapi
+                ->Organizations
+                ->renewLiveApiKey(
+                    $organizationId
+                );
+
+            if (
+                !is_string($apiKey)
+                || trim($apiKey) === ''
+            ) {
+                throw new \RuntimeException(
+                    'Facturapi no devolvió una Live API Key válida.'
+                );
+            }
+
+            return trim($apiKey);
+
+        } catch (Throwable $error) {
+            throw $this->providerException($error);
+        }
+    }
+
     private function requireOrganizationId(
         string $organizationId,
     ): string {

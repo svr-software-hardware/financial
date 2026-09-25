@@ -85,23 +85,31 @@ final class FacturapiInvoicePayloadMapper
     private function mapItem(
         InvoiceItemData $item,
     ): array {
+        $product = [
+            'description' => $item->description,
+            'product_key' => $item->productKey,
+            'unit_key' => $item->unitKey,
+            'price' => $item->price,
+            'tax_included' => $item->taxIncluded,
+            'taxes' => array_map(
+                fn (TaxData $tax): array => [
+                    'type' => $tax->type,
+                    'rate' => $tax->rate,
+                ],
+                $item->taxes,
+            ),
+        ];
+
+        $sku = trim((string) $item->sku);
+
+        if ($sku !== '') {
+            $product['sku'] = $sku;
+        }
+
         return [
             'quantity' => $item->quantity,
             'discount' => $item->discount,
-            'product' => [
-                'description' => $item->description,
-                'product_key' => $item->productKey,
-                'unit_key' => $item->unitKey,
-                'price' => $item->price,
-                'tax_included' => $item->taxIncluded,
-                'taxes' => array_map(
-                    fn (TaxData $tax): array => [
-                        'type' => $tax->type,
-                        'rate' => $tax->rate,
-                    ],
-                    $item->taxes,
-                ),
-            ],
+            'product' => $product,
         ];
     }
 }

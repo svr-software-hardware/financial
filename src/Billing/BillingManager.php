@@ -20,8 +20,7 @@ use SVR\Financial\Billing\Models\FiscalCustomer;
 use SVR\Financial\Billing\Models\FiscalValidation;
 use SVR\Financial\Billing\Models\Invoice;
 
-final readonly class BillingManager
-{
+final readonly class BillingManager {
     public function __construct(
         private InvoiceGateway $invoiceGateway,
         private FiscalCustomerGateway $customerGateway,
@@ -29,8 +28,7 @@ final readonly class BillingManager
     ) {
     }
 
-    public function provider(): BillingProvider
-    {
+    public function provider(): BillingProvider {
         return $this->invoiceGateway
             ->provider();
     }
@@ -138,6 +136,15 @@ final readonly class BillingManager
             ->uploadCertificate(
                 $organizationId,
                 $data,
+            );
+    }
+
+    public function createOrganizationLiveApiKey(
+        string $organizationId,
+    ): string {
+        return $this->organizationGateway
+            ->createLiveApiKey(
+                $organizationId
             );
     }
 }

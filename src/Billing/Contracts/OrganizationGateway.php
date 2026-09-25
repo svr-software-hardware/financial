@@ -24,4 +24,8 @@ interface OrganizationGateway
         string $organizationId,
         OrganizationCertificateData $data,
     ): BillingOrganization;
+
+    public function createLiveApiKey(
+        string $organizationId,
+    ): string;
 }
