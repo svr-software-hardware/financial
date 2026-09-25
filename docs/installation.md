@@ -1,150 +1,108 @@
 # Instalación
 
-SVR Financial es una librería interna desarrollada para proyectos de SVR.
+SVR Financial requiere PHP 8.4+, Laravel 12.x y Composer. El paquete se llama
+`svr/financial` y el repositorio es privado.
 
-Repositorio:
+## Instalar desde el repositorio VCS
 
-https://github.com/svr-software-hardware/financial
-
----
-
-## Requisitos
-
-La versión 1 requiere:
-
-```text
-PHP 8.4+
-Laravel 12+
-Composer
-```
-
----
-
-## Agregar el repositorio
-
-Como la librería no se distribuye mediante Packagist, el proyecto consumidor
-debe indicar a Composer dónde encontrarla.
-
-En el `composer.json` del proyecto agrega:
+Agregue el repositorio al `composer.json` de la aplicación:
 
 ```json
 {
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/svr-software-hardware/financial"
+            "url": "https://github.com/svr-software-hardware/financial.git"
         }
     ]
 }
 ```
 
-Por ejemplo:
-
-```json
-{
-    "name": "svr/example-project",
-
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/svr-software-hardware/financial"
-        }
-    ],
-
-    "require": {
-        "php": "^8.4",
-        "laravel/framework": "^12.0"
-    }
-}
-```
-
----
-
-## Instalar
-
-Ejecuta:
+Instale una versión compatible:
 
 ```bash
 composer require svr/financial:^1.0
 ```
 
-Composer instalará también las dependencias necesarias de los proveedores
-soportados.
+Como el repositorio es privado, cada equipo de desarrollo, servidor y proceso
+de CI/CD debe tener acceso a GitHub. No guarde tokens ni credenciales de GitHub
+en el repositorio de la aplicación.
 
----
+## Desarrollo local con un repositorio `path`
 
-## Repositorio privado
-
-Si el repositorio es privado, la máquina que ejecuta Composer debe tener acceso
-a GitHub.
-
-Esto aplica tanto para:
+Si la aplicación y la librería están disponibles localmente:
 
 ```text
-Desarrollo local
-Servidor de pruebas
-Producción
-CI/CD
+workspace/
+├── financial/
+└── application/
 ```
 
-Las credenciales de GitHub no deben guardarse dentro del repositorio del
-proyecto.
+configure en `application/composer.json`:
 
----
+```json
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../financial",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require": {
+        "svr/financial": "dev-main"
+    }
+}
+```
 
-## Laravel Package Discovery
+Después ejecute desde la aplicación:
 
-SVR Financial registra automáticamente:
+```bash
+composer update svr/financial -W
+```
+
+Con `symlink: true`, los cambios realizados en la librería quedan disponibles
+sin copiar manualmente sus archivos. Si el sistema no puede crear enlaces,
+Composer puede instalar una copia; en ese caso ejecute nuevamente el update al
+cambiar la librería.
+
+No mantenga simultáneamente entradas VCS y `path` para el mismo paquete salvo
+que controle de forma explícita la prioridad de los repositorios.
+
+## Package discovery
+
+Composer registra automáticamente:
 
 ```text
 SVR\Financial\FinancialServiceProvider
 ```
 
-por medio de Composer.
+Normalmente no es necesario agregar el provider manualmente a Laravel.
 
-Por lo tanto, normalmente no es necesario modificar manualmente los providers
-de Laravel.
-
----
-
-## Publicar configuración
-
-Si el Service Provider ofrece publicación de configuración, ejecuta:
+## Publicar la configuración
 
 ```bash
-php artisan vendor:publish
+php artisan vendor:publish --tag=financial-config
 ```
 
-Selecciona la configuración correspondiente a SVR Financial.
-
-El archivo resultante será:
+El comando crea:
 
 ```text
 config/financial.php
 ```
 
----
+Agregue las variables necesarias al `.env` y consulte
+[Configuración](configuration.md).
 
-## Limpiar caché
-
-Después de instalar o modificar configuración:
+Después limpie la caché:
 
 ```bash
 php artisan optimize:clear
 ```
 
-En desarrollo también puede utilizarse:
-
-```bash
-php artisan config:clear
-php artisan cache:clear
-```
-
----
-
-## Verificar instalación
-
-Puede comprobarse desde Tinker:
+## Verificar con Tinker
 
 ```bash
 php artisan tinker
@@ -156,14 +114,8 @@ Pagos:
 use SVR\Financial\Payments\PaymentManager;
 
 $payments = app(PaymentManager::class);
-
 $payments::class;
-```
-
-Debe devolver:
-
-```text
-SVR\Financial\Payments\PaymentManager
+$payments->provider();
 ```
 
 Facturación:
@@ -172,31 +124,41 @@ Facturación:
 use SVR\Financial\Billing\BillingManager;
 
 $billing = app(BillingManager::class);
-
 $billing::class;
+$billing->provider();
 ```
 
-Debe devolver:
+Las llamadas a `provider()` no contactan al proveedor; permiten confirmar que
+Laravel resolvió los bindings del paquete.
 
-```text
-SVR\Financial\Billing\BillingManager
-```
-
----
-
-## Actualizar
-
-Para actualizar dentro de una versión compatible:
+También puede comprobar la versión instalada:
 
 ```bash
-composer update svr/financial
+composer show svr/financial
 ```
 
-La versión utilizada por cada proyecto debe mantenerse explícita en
-`composer.json`.
+## Actualizar el paquete
 
-Ejemplo:
+Para actualizar dentro de la restricción declarada por la aplicación:
 
-```json
-"svr/financial": "^1.0"
+```bash
+composer update svr/financial -W
+php artisan optimize:clear
 ```
+
+Revise y confirme en Git tanto `composer.json` como `composer.lock`. En
+producción instale el lockfile aprobado:
+
+```bash
+composer install --no-dev --optimize-autoloader
+php artisan optimize:clear
+```
+
+## Siguiente paso
+
+- [Configuración](configuration.md)
+- [Pagos con OpenPay](payments.md)
+- [Facturación con Facturapi](billing.md)
+- [Organizations](organizations.md)
+- [Público en General](public-general.md)
+- [Manejo de errores](errors.md)

@@ -1,113 +1,153 @@
 # SVR Financial
 
-Librería interna de SVR para estandarizar integraciones de pagos y facturación
-en aplicaciones PHP/Laravel.
+Librería interna para integrar pagos con OpenPay y facturación con Facturapi en
+aplicaciones Laravel. Expone DTOs, modelos normalizados y dos puntos de entrada:
 
-Actualmente soporta:
+```php
+SVR\Financial\Payments\PaymentManager
+SVR\Financial\Billing\BillingManager
+```
 
-### Pagos
+La aplicación consumidora mantiene sus reglas de negocio, persistencia,
+idempotencia y relación entre pagos, facturas y entidades propias.
 
-- OpenPay
-- Cobros con tarjeta
-- 3D Secure
-- Consulta de cargos
-- Uso de puntos
-- Normalización de estados y errores
+## Capacidades
 
-### Facturación
+### OpenPay
 
-- Facturapi
-- Clientes fiscales
-- Validación fiscal
-- Timbrado CFDI
-- Descarga PDF/XML
-- Cuenta principal
-- Organizations
+- cobros con tarjeta;
+- 3D Secure;
+- uso de puntos;
+- consulta de cargos;
+- teléfono del cliente opcional;
+- estados, tarjetas y errores normalizados;
+- separación entre rechazos bancarios y errores técnicos.
 
----
+### Facturapi
+
+- creación y validación de clientes fiscales;
+- timbrado CFDI y descarga PDF/XML;
+- cuenta principal y Organizations;
+- creación de Organizations;
+- actualización de datos fiscales;
+- carga de CSD;
+- creación de Live API Keys;
+- facturación global a Público en General;
+- contexto explícito de emisor mediante `BillingContext`.
 
 ## Requisitos
 
-- PHP 8.4+
-- Laravel 12+
-- Composer
+- PHP 8.4 o posterior;
+- Laravel 12.x;
+- Composer.
 
----
+## Instalación rápida
 
-## Instalación
-
-La librería se encuentra en:
-
-https://github.com/svr-software-hardware/financial
-
-Agrega el repositorio al `composer.json` del proyecto:
+Agregue el repositorio VCS al `composer.json` de la aplicación:
 
 ```json
 {
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/svr-software-hardware/financial"
+            "url": "https://github.com/svr-software-hardware/financial.git"
         }
     ]
 }
 ```
 
-Después instala la librería:
-
 ```bash
 composer require svr/financial:^1.0
+php artisan vendor:publish --tag=financial-config
+php artisan optimize:clear
 ```
 
-Laravel descubrirá automáticamente:
+Configure las credenciales en `.env`. Consulte la
+[guía de instalación](docs/installation.md) para repositorios privados y uso
+local mediante Composer `path`.
 
-```text
-SVR\Financial\FinancialServiceProvider
-```
-
-> Si el repositorio es privado, el equipo deberá tener acceso al repositorio
-> mediante GitHub y Composer deberá contar con las credenciales correspondientes.
-
-Consulta la guía completa:
-
-[Instalación](docs/installation.md)
-
----
-
-## Uso rápido
-
-### OpenPay
+## Ejemplo mínimo de OpenPay
 
 ```php
+use SVR\Financial\Payments\DTO\CardChargeData;
+use SVR\Financial\Payments\DTO\CustomerData;
+use SVR\Financial\Payments\OpenPay\DTO\OpenPayChargeOptions;
 use SVR\Financial\Payments\PaymentManager;
 
 $payments = app(PaymentManager::class);
 
-$charge = $payments->charge($chargeData);
+$charge = $payments->charge(
+    new CardChargeData(
+        amount: 100.00,
+        description: 'Servicio de correo electrónico',
+        paymentMethodId: $tokenId,
+        customer: new CustomerData(
+            name: 'Juan',
+            lastName: 'Pérez',
+            email: 'juan@example.com',
+        ),
+        providerOptions: new OpenPayChargeOptions(
+            deviceSessionId: $deviceSessionId,
+            customerIp: $request->ip(),
+        ),
+    )
+);
+
+if ($charge->successful()) {
+    $providerId = $charge->providerId;
+}
 ```
 
-### Facturapi
+El token de tarjeta y `deviceSessionId` deben obtenerse con las herramientas de
+OpenPay en la aplicación consumidora.
+
+## Ejemplo mínimo de Facturapi
 
 ```php
 use SVR\Financial\Billing\BillingManager;
+use SVR\Financial\Billing\DTO\FiscalCustomerData;
+use SVR\Financial\Billing\DTO\InvoiceData;
+use SVR\Financial\Billing\DTO\InvoiceItemData;
+use SVR\Financial\Billing\DTO\TaxData;
 
 $billing = app(BillingManager::class);
 
-$invoice = $billing->stamp($invoiceData);
-```
-
-### Facturapi Organization
-
-```php
-use SVR\Financial\Billing\DTO\BillingContext;
+$customer = new FiscalCustomerData(
+    taxId: 'ABC010101ABC',
+    legalName: 'EMPRESA DEMO SA DE CV',
+    taxSystem: '601',
+    zipCode: '38000',
+);
 
 $invoice = $billing->stamp(
-    $invoiceData,
-    BillingContext::organization($organizationId),
+    new InvoiceData(
+        customer: $customer,
+        items: [
+            new InvoiceItemData(
+                description: 'Servicio de correo electrónico',
+                productKey: '81112100',
+                unitKey: 'E48',
+                price: 116.00,
+                taxes: [
+                    new TaxData(
+                        type: 'IVA',
+                        rate: 0.16,
+                    ),
+                ],
+            ),
+        ],
+        cfdiUsage: 'G03',
+        paymentForm: '04',
+    )
 );
+
+$providerId = $invoice->providerId;
+$uuid = $invoice->uuid;
 ```
 
----
+Para una factura global a Público en General utilice
+`PublicGeneralInvoiceData` y `stampPublicGeneral()` en lugar de construir un
+`InvoiceData` normal.
 
 ## Documentación
 
@@ -115,46 +155,13 @@ $invoice = $billing->stamp(
 - [Configuración](docs/configuration.md)
 - [Pagos con OpenPay](docs/payments.md)
 - [Facturación con Facturapi](docs/billing.md)
+- [Organizations](docs/organizations.md)
+- [Facturación a Público en General](docs/public-general.md)
 - [Manejo de errores](docs/errors.md)
-- [Arquitectura](docs/architecture.md)
 
----
+## Límites de responsabilidad
 
-## Principio de diseño
-
-La aplicación conoce el dominio.
-
-SVR Financial conoce al proveedor financiero.
-
-La librería no debe conocer conceptos propios de los proyectos, como:
-
-```text
-Sale
-StandRequest
-Ticket
-Company
-User
-Transaction
-```
-
-La aplicación convierte sus datos en DTOs de SVR Financial y recibe modelos
-normalizados como resultado.
-
----
-
-## Proveedores actuales
-
-| Área | Proveedor |
-|---|---|
-| Pagos | OpenPay |
-| Facturación | Facturapi |
-
----
-
-## Versión
-
-Versión actual:
-
-```text
-v1.0.2
-```
+SVR Financial no crea tablas ni persiste pagos, clientes fiscales, facturas,
+Organizations, PDF o XML. Tampoco decide precios, conceptos, impuestos,
+división entre emisores ni cuándo una operación debe reintentarse. Esas
+decisiones pertenecen a cada aplicación consumidora.
