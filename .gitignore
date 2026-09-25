@@ -6,4 +6,4 @@
 !.env.example
 composer.phar
 auth.json
-
+*.zip
