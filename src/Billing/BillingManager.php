@@ -147,4 +147,13 @@ final readonly class BillingManager {
                 $organizationId
             );
     }
+
+    public function getOrganization(
+        string $organizationId,
+    ): BillingOrganization {
+        return $this->organizationGateway
+            ->retrieve(
+                $organizationId
+            );
+    }
 }

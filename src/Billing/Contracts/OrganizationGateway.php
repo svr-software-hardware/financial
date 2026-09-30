@@ -15,6 +15,10 @@ interface OrganizationGateway
         OrganizationData $data,
     ): BillingOrganization;
 
+    public function retrieve(
+        string $organizationId,
+    ): BillingOrganization;
+
     public function updateLegalData(
         string $organizationId,
         OrganizationLegalData $data,

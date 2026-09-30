@@ -28,7 +28,9 @@ idempotencia y relación entre pagos, facturas y entidades propias.
 - creación y validación de clientes fiscales;
 - timbrado CFDI y descarga PDF/XML;
 - cuenta principal y Organizations;
-- creación de Organizations;
+- creación y consulta de Organizations;
+- estado de producción, pasos pendientes y estado del CSD;
+- detección de expiración del certificado;
 - actualización de datos fiscales;
 - carga de CSD;
 - creación de Live API Keys;

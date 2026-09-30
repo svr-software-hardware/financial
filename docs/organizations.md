@@ -66,6 +66,10 @@ $organization->name;
 $organization->productionReady;
 $organization->pendingSteps;
 $organization->createdAt;
+$organization->certificateLoaded;
+$organization->certificateUpdatedAt;
+$organization->certificateExpiresAt;
+$organization->certificateSerialNumber;
 ```
 
 El identificador de la Organization en Facturapi se encuentra en:
@@ -188,29 +192,79 @@ No debe utilizarse el ID interno de una tabla de la aplicación.
 
 ---
 
-## Consultar el estado de configuración
+## Consultar el estado actual de una Organization
 
-Después de crear o actualizar una Organization pueden consultarse:
+Para recuperar el estado actual reportado por Facturapi se utiliza:
+
+```php
+$organization = $billing->getOrganization(
+    $organizationId
+);
+```
+
+El resultado es una instancia de `BillingOrganization` con estas propiedades de
+estado:
 
 ```php
 $organization->productionReady;
 $organization->pendingSteps;
+$organization->certificateLoaded;
+$organization->certificateUpdatedAt;
+$organization->certificateExpiresAt;
+$organization->certificateSerialNumber;
 ```
 
-Ejemplo:
+| Propiedad | Tipo | Significado |
+| --- | --- | --- |
+| `productionReady` | `bool` | Indica si Facturapi considera que la Organization está lista para operar en Live. |
+| `pendingSteps` | `array<int, string>` | Contiene los pendientes reportados por Facturapi. |
+| `certificateLoaded` | `bool` | Indica si Facturapi reporta un CSD cargado. |
+| `certificateUpdatedAt` | `?DateTimeImmutable` | Fecha en la que Facturapi reporta la última actualización del CSD. |
+| `certificateExpiresAt` | `?DateTimeImmutable` | Fecha de expiración del CSD. |
+| `certificateSerialNumber` | `?string` | Número de serie del CSD reportado por Facturapi. |
+
+Para comprobar si el CSD ya venció:
 
 ```php
-if (!$organization->productionReady) {
-    foreach ($organization->pendingSteps as $step) {
-        logger()->info($step);
-    }
+if ($organization->certificateExpired()) {
+    // Solicitar renovación del CSD.
 }
 ```
 
-`productionReady` indica si Facturapi considera que la Organization está lista
-para operar en producción.
+`certificateExpired()` también acepta la fecha contra la que se desea evaluar:
 
-`pendingSteps` contiene los pasos pendientes reportados por Facturapi.
+```php
+use DateTimeImmutable;
+
+$expiredAtDate = $organization->certificateExpired(
+    new DateTimeImmutable('2030-01-01T00:00:00+00:00')
+);
+```
+
+El método devuelve `false` cuando no hay un certificado cargado o Facturapi no
+proporciona su fecha de expiración.
+
+Flujo recomendado:
+
+```php
+$organization = $billing->getOrganization(
+    $organizationId
+);
+
+if (!$organization->certificateLoaded) {
+    // Solicitar carga del CSD.
+}
+
+if ($organization->certificateExpired()) {
+    // Solicitar renovación del CSD.
+}
+
+if (!$organization->productionReady) {
+    // Revisar pendingSteps.
+}
+```
+
+La Organization no expira. Lo que puede expirar es su certificado CSD.
 
 ---
 
@@ -353,7 +407,8 @@ $liveApiKey = $billing->createOrganizationLiveApiKey(
 );
 ```
 
-La aplicación debe almacenar esta llave de forma segura.
+La aplicación debe generar esta llave una sola vez y almacenarla de forma segura,
+porque se utilizará posteriormente mediante `BillingContext::organization(...)`.
 
 No debe generarse una nueva Live API Key para cada operación.
 

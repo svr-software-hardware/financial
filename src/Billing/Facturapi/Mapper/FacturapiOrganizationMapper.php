@@ -30,6 +30,11 @@ final class FacturapiOrganizationMapper
             }
         }
 
+        $certificate = isset($organization->certificate)
+            && is_object($organization->certificate)
+                ? $organization->certificate
+                : null;
+
         return new BillingOrganization(
             provider: BillingProvider::Facturapi,
             providerId: (string) $organization->id,
@@ -39,11 +44,37 @@ final class FacturapiOrganizationMapper
             productionReady:
                 (bool) ($organization->is_production_ready ?? false),
             pendingSteps: $pendingSteps,
-            createdAt: isset($organization->created_at)
-                ? new DateTimeImmutable(
-                    (string) $organization->created_at
-                )
-                : null,
+            createdAt: $this->date(
+                $organization->created_at ?? null
+            ),
+            certificateLoaded:
+                (bool) ($certificate->has_certificate ?? false),
+            certificateUpdatedAt: $this->date(
+                $certificate->updated_at ?? null
+            ),
+            certificateExpiresAt: $this->date(
+                $certificate->expires_at ?? null
+            ),
+            certificateSerialNumber:
+                isset($certificate->serial_number)
+                    ? (string) $certificate->serial_number
+                    : null,
         );
+    }
+
+    private function date(
+        mixed $value,
+    ): ?DateTimeImmutable {
+        if (!is_string($value)) {
+            return null;
+        }
+
+        $value = trim($value);
+
+        if ($value === '') {
+            return null;
+        }
+
+        return new DateTimeImmutable($value);
     }
 }

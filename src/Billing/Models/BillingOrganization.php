@@ -19,6 +19,26 @@ final readonly class BillingOrganization
         public bool $productionReady = false,
         public array $pendingSteps = [],
         public ?DateTimeImmutable $createdAt = null,
+        public bool $certificateLoaded = false,
+        public ?DateTimeImmutable $certificateUpdatedAt = null,
+        public ?DateTimeImmutable $certificateExpiresAt = null,
+        public ?string $certificateSerialNumber = null,
     ) {
+    }
+
+    public function certificateExpired(
+        ?DateTimeImmutable $at = null,
+    ): bool {
+        if (!$this->certificateLoaded) {
+            return false;
+        }
+
+        if ($this->certificateExpiresAt === null) {
+            return false;
+        }
+
+        return $this->certificateExpiresAt <= (
+            $at ?? new DateTimeImmutable()
+        );
     }
 }

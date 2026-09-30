@@ -48,6 +48,31 @@ final readonly class FacturapiOrganizationGateway implements OrganizationGateway
         }
     }
 
+    public function retrieve(
+        string $organizationId,
+    ): BillingOrganization {
+        $organizationId = $this->requireOrganizationId(
+            $organizationId
+        );
+
+        try {
+            $facturapi = $this->clientFactory
+                ->createUserClient();
+
+            $organization = $facturapi
+                ->Organizations
+                ->retrieve(
+                    $organizationId
+                );
+
+            return $this->organizationMapper
+                ->fromResponse($organization);
+
+        } catch (Throwable $error) {
+            throw $this->providerException($error);
+        }
+    }
+
     public function updateLegalData(
         string $organizationId,
         OrganizationLegalData $data,
