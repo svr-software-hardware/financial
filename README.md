@@ -167,3 +167,18 @@ SVR Financial no crea tablas ni persiste pagos, clientes fiscales, facturas,
 Organizations, PDF o XML. Tampoco decide precios, conceptos, impuestos,
 división entre emisores ni cuándo una operación debe reintentarse. Esas
 decisiones pertenecen a cada aplicación consumidora.
+
+
+## Identidad fiscal de la plataforma
+
+La revisión prevista para Financial 1.2 agrega `PlatformOrganizationGateway::retrieve()`. Usa la clave principal de `financial.invoices.facturapi.api_key` para consultar `GET /organizations/me`; no utiliza User Secret Key ni requiere configurar un ID de organización de la plataforma.
+
+```php
+$organization = app(\SVR\Financial\Billing\Contracts\PlatformOrganizationGateway::class)->retrieve();
+```
+
+`BillingOrganization` incorpora propiedades opcionales `taxId`, `legalName`, `taxSystem`, `zipCode` y `country`, tomadas de `legal` y `legal.address`. El código postal se conserva como cadena y no se confunde el nombre comercial con la razón social fiscal. Los constructores anteriores siguen siendo compatibles porque los campos nuevos son opcionales y se agregaron al final.
+
+La lectura es una consulta al proveedor y puede lanzar `BillingProviderException`. No modifica organizaciones ni certificados, ni emite una factura. El consumidor debe validar que la respuesta fiscal esté completa antes de utilizarla. Workflow realiza esa validación y conserva el snapshot utilizado en cada factura.
+
+Referencia: [detalle de la organización autenticada](https://docs.facturapi.io/api/#tag/Organizaciones). Esta revisión todavía necesita su versionado/publicación; no se crearon commits ni tags durante su desarrollo.

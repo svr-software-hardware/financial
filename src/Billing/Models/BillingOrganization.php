@@ -23,6 +23,11 @@ final readonly class BillingOrganization
         public ?DateTimeImmutable $certificateUpdatedAt = null,
         public ?DateTimeImmutable $certificateExpiresAt = null,
         public ?string $certificateSerialNumber = null,
+        public ?string $taxId = null,
+        public ?string $legalName = null,
+        public ?string $taxSystem = null,
+        public ?string $zipCode = null,
+        public ?string $country = null,
     ) {
     }
 

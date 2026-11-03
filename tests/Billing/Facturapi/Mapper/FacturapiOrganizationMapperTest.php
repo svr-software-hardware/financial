@@ -122,4 +122,15 @@ final class FacturapiOrganizationMapperTest extends TestCase
             $organization->certificateExpired()
         );
     }
+
+    public function test_it_maps_fiscal_identity_without_using_commercial_name_as_legal_name(): void
+    {
+        $response=(object)['id'=>'platform','legal'=>(object)['name'=>'Commercial','legal_name'=>'FISCAL NAME','tax_id'=>'ABC010101AB1','tax_system'=>'601','address'=>(object)['zip'=>'01234','country'=>'MEX']]];
+        $organization=(new FacturapiOrganizationMapper())->fromResponse($response);
+        self::assertSame('FISCAL NAME',$organization->legalName);self::assertSame('Commercial',$organization->name);
+        self::assertSame('ABC010101AB1',$organization->taxId);self::assertSame('601',$organization->taxSystem);self::assertSame('01234',$organization->zipCode);
+        self::assertSame('MEX',$organization->country);
+        $missing=(new FacturapiOrganizationMapper())->fromResponse((object)['id'=>'empty','legal'=>(object)['name'=>'Only commercial']]);
+        self::assertNull($missing->legalName);self::assertNull($missing->taxId);self::assertNull($missing->zipCode);
+    }
 }

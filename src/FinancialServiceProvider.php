@@ -108,6 +108,11 @@ final class FinancialServiceProvider extends ServiceProvider {
     );
 
     $this->app->bind(
+      \SVR\Financial\Billing\Contracts\PlatformOrganizationGateway::class,
+      \SVR\Financial\Billing\Facturapi\FacturapiPlatformOrganizationGateway::class,
+    );
+
+    $this->app->bind(
       OrganizationGateway::class,
       FacturapiOrganizationGateway::class,
     );

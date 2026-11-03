@@ -36,6 +36,11 @@ final class FacturapiOrganizationMapper
                 : null;
 
         return new BillingOrganization(
+            taxId: isset($organization->legal->tax_id) ? trim((string)$organization->legal->tax_id) : null,
+            legalName: isset($organization->legal->legal_name) ? trim((string)$organization->legal->legal_name) : null,
+            taxSystem: isset($organization->legal->tax_system) ? trim((string)$organization->legal->tax_system) : null,
+            zipCode: isset($organization->legal->address->zip) ? trim((string)$organization->legal->address->zip) : null,
+            country: isset($organization->legal->address->country) ? trim((string)$organization->legal->address->country) : null,
             provider: BillingProvider::Facturapi,
             providerId: (string) $organization->id,
             name: isset($organization->legal->name)
