@@ -1,6 +1,6 @@
 # SVR Financial
 
-Librería interna para integrar pagos con OpenPay y facturación con Facturapi en
+Librería reutilizable para integrar pagos con OpenPay y facturación con Facturapi en
 aplicaciones Laravel. Expone DTOs, modelos normalizados y dos puntos de entrada:
 
 ```php
@@ -10,6 +10,8 @@ SVR\Financial\Billing\BillingManager
 
 La aplicación consumidora mantiene sus reglas de negocio, persistencia,
 idempotencia y relación entre pagos, facturas y entidades propias.
+
+Versión estable: **v1.2.0**. [Historial de esta entrega](CHANGELOG.md).
 
 ## Capacidades
 
@@ -59,7 +61,7 @@ Agregue el repositorio VCS al `composer.json` de la aplicación:
 ```
 
 ```bash
-composer require svr/financial:^1.0
+composer require "svr/financial:^1.2"
 php artisan vendor:publish --tag=financial-config
 php artisan optimize:clear
 ```
